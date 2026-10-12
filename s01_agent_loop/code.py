@@ -31,6 +31,7 @@ Usage:
 
 import os
 import subprocess
+from utils.logger_handler import logger
 
 try:
     import readline
@@ -144,6 +145,9 @@ if __name__ == "__main__":
         agent_loop(history)
         # Print the model's final text response
         response_content = history[-1]["content"]
+        logger.debug(f"Model response: {response_content}")
+        logger.info("=== " * 20)
+        logger.info(f"Full conversation history: {history}")
         if isinstance(response_content, list):
             for block in response_content:
                 if getattr(block, "type", None) == "text":

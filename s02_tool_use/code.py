@@ -117,20 +117,20 @@ def run_edit(path: str, old_text: str, new_text: str) -> str:
         return f"Error: {e}"
 
 
-def run_glob(pattern: str) -> str:
-    import glob as g
-    try:
-        matches = sorted({
-            match for match in g.glob(
-                pattern, root_dir=WORKDIR, recursive=True)
-            if (WORKDIR / match).resolve().is_relative_to(WORKDIR)
-        })
-        shown = matches[:200]
-        if len(matches) > 200:
-            shown.append("... (more matches omitted; narrow the pattern)")
-        return "\n".join(shown) if shown else "(no matches)"
-    except Exception as e:
-        return f"Error: {e}"
+def run_glob(pattern: str) -> str:  # 接收路径通配模式，如 **/*.py；返回路径列表组成的字符串
+    import glob as g  # 导入标准库 glob，起别名 g；后面用 g.glob(...) 查找匹配路径
+    try:  # 尝试查找与整理结果；本段抛出的普通异常会交给下面的 except
+        matches = sorted({  # {} 是集合推导式，先去重；sorted 按字符串顺序排序并返回列表
+            match for match in g.glob(  # 遍历 glob 返回的路径字符串，把满足后面 if 条件的 match 留下
+                pattern, root_dir=WORKDIR, recursive=True)  # 相对模式从工作目录查找；允许 ** 跨多层目录匹配
+            if (WORKDIR / match).resolve().is_relative_to(WORKDIR)  # / 拼接路径；resolve 解析 .. 和符号链接；只保留解析后位于工作区内的结果
+        })  # 结束集合推导式和排序调用；matches 是已过滤、去重并排序的路径列表
+        shown = matches[:200]  # 切片复制前 200 条到新列表；限制展示数量，不限制 glob 的搜索量
+        if len(matches) > 200:  # 如果完整结果超过 200 条，需要说明展示内容被截断
+            shown.append("... (more matches omitted; narrow the pattern)")  # 在展示列表末尾加提示，建议缩小匹配范围
+        return "\n".join(shown) if shown else "(no matches)"  # 列表非空时用换行拼接路径；空列表返回无匹配提示
+    except Exception as e:  # 捕获 try 中传播出来的普通异常，用变量 e 取得异常信息
+        return f"Error: {e}"  # 把异常转为字符串工具结果，交回 Agent；不在这里重新抛出
 
 
 # -- New in s02: tool definitions (one tool in s01, five in s02) --

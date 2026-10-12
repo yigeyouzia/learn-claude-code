@@ -203,12 +203,14 @@ def context_inject_hook(query: str):
     return None
 
 # Stop hook: print summary when loop is about to exit
-def summary_hook(messages: list):
-    tool_count = sum(1 for m in messages
-                     for b in (m.get("content") if isinstance(m.get("content"), list) else [])
-                     if isinstance(b, dict) and b.get("type") == "tool_result")
-    print(f"\033[90m[HOOK] Stop: session used {tool_count} tool calls\033[0m")
-    return None
+# 中文说明：当前回合准备返回时，统计整份会话历史里的工具结果；不生成模型摘要。
+# 统计包含被拒绝或执行失败的请求结果，因此不等于成功执行的工具数量。
+def summary_hook(messages: list):  # Stop 事件回调；messages 与外层 history 指向同一列表
+    tool_count = sum(1 for m in messages  # 遍历历史消息，每个符合条件的结果贡献 1，最后求和
+                     for b in (m.get("content") if isinstance(m.get("content"), list) else [])  # content 为列表才逐块遍历；字符串等用空列表跳过
+                     if isinstance(b, dict) and b.get("type") == "tool_result")  # 只统计字典形式的工具结果，排除文本和 SDK 响应块
+    print(f"\033[90m[HOOK] Stop: session used {tool_count} tool calls\033[0m")  # 灰色打印累计统计，末尾重置终端样式
+    return None  # 不提供续跑消息；若其他 Stop 回调也不要求续跑，本回合正常返回
 
 register_hook("UserPromptSubmit", context_inject_hook)
 register_hook("PreToolUse", permission_hook)
